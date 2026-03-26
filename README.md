@@ -80,3 +80,4 @@ POST /query   →  embed question  →  vector search (ChromaDB)
 - **NER**: replace spaCy in `app/entities.py` with an LLM-based extractor
 - **Chunker**: replace word-splitter in `app/ingest.py` with `tiktoken`-based splitter
 # lexbot
+# lexbot
