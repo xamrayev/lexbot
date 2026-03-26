@@ -83,30 +83,6 @@ curl -X POST http://localhost:8000/upload
 docker-compose down
 ```
 
-### Mahalliylashtirilgan ishga tushirish (Dockersiz)
-
-```bash
-# 1. Virtual muhit yaratish
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 2. Bog'liqliklarni o'rnatish
-pip install -r requirements.txt
-
-# 3. Neo4j ishga tushiring (alohida container)
-docker run -d --name neo4j \
-  -p 7474:7474 -p 7687:7687 \
-  -e NEO4J_AUTH=neo4j/LegalGraph2024! \
-  neo4j:5.23-community
-
-# 4. Backend ishga tushiring
-python main.py
-
-# 5. Chat interfeysini ishga tushiring (boshqa terminal)
-cd chat
-streamlit run app.py
-```
-
 ## 🌐 Foydalanish
 
 | Interfeys | Manzil |
