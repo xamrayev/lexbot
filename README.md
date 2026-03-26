@@ -204,4 +204,4 @@ Birinchi ishga tushirishda modelni yuklash uchun internet kerak. Keyingi marotob
 
 ## 📄 Litsenziya
 
-Bu loyiha ta'lim maqsadida yaratilgan. Mehnat Kodeksining rasmiy matni faqat O'zbekiston Respublikasi Vazirlar Mahkamasining rasmiy saytidan olinishi kerak.
+Bu loyiha izlanish uchun yaratilgan. Mehnat Kodeksining rasmiy matni faqat O'zbekiston Respublikasi Vazirlar Mahkamasining rasmiy saytidan olinishi kerak.
