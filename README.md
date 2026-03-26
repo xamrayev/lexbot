@@ -81,3 +81,4 @@ POST /query   →  embed question  →  vector search (ChromaDB)
 - **Chunker**: replace word-splitter in `app/ingest.py` with `tiktoken`-based splitter
 # lexbot
 # lexbot
+# lexbot
