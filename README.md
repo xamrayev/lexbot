@@ -82,3 +82,4 @@ POST /query   →  embed question  →  vector search (ChromaDB)
 # lexbot
 # lexbot
 # lexbot
+# lexbot
