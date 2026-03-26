@@ -1,0 +1,130 @@
+version: "3.8"
+
+# ==============================================
+# Docker Compose for llm-graph-builder
+# O'zbekiston Mehnat Kodeksi - Uzbek Labor Code
+# ==============================================
+
+services:
+  # Neo4j Database (Graph + Vectors)
+  neo4j:
+    image: neo4j:5.23-community
+    container_name: neo4j_uz_legal_graph
+    restart: unless-stopped
+    ports:
+      - "7474:7474"  # Neo4j Browser
+      - "7687:7687"  # Bolt port
+    environment:
+      - NEO4J_AUTH=${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-LegalGraph2024!}
+      - NEO4J_dbms_memory_heap_initial__size=2g
+      - NEO4J_dbms_memory_heap_max__size=4g
+      - NEO4J_dbms_memory_pagecache_size=2g
+      - NEO4J_dbms_security_procedures_unrestricted=genai.*,vector.*
+      - NEO4J_dbms_config_vector__index__default__distance__function=COSINE
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - legal_net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (llm-graph-builder)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: legal_graph_backend_uz
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM Configuration (OpenRouter - OpenAI compatible)
+      - LLM_MODEL_CONFIG_OPENROUTER_FREE=openrouter/free,${OPENAI_API_KEY}
+
+      # Embedding Model (Multilingual - supports Uzbek)
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      - EMBEDDING_PROVIDER=sentence-transformer
+      - IS_EMBEDDING=true
+
+      # Neo4j Connection
+      - NEO4J_URI=neo4j://neo4j:7687
+      - NEO4J_USERNAME=${NEO4J_USERNAME:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-LegalGraph2024!}
+      - NEO4J_DATABASE=neo4j
+
+      # Graph Settings
+      - KNN_MIN_SCORE=${KNN_MIN_SCORE:-0.85}
+      - ENTITY_EMBEDDING=true
+      - DUPLICATE_SCORE_VALUE=0.95
+      - DUPLICATE_TEXT_DISTANCE=3
+
+      # Chunk Settings
+      - MAX_TOKEN_CHUNK_SIZE=10000
+      - TOKEN_CHUNK_SIZE=512
+      - CHUNK_OVERLAP=50
+
+      # Post-processing
+      - GRAPH_CLEANUP_MODEL=openrouter/free
+      - UPDATE_GRAPH_CHUNKS_PROCESSED=20
+
+      # GCP (Optional)
+      - GCP_LOG_METRICS_ENABLED=False
+      - GCS_FILE_CACHE=False
+
+      # Language
+      - LANGUAGE=uz
+
+      # Docker networking
+      - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
+    volumes:
+      - ./backend:/code
+      - ./data:/data
+      - ~/.config/gcloud:/root/.config/gcloud:ro
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    networks:
+      - legal_net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Frontend UI (React)
+  frontend:
+    depends_on:
+      - backend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_BACKEND_API_URL=http://localhost:8000
+        - VITE_REACT_APP_SOURCES=local,wiki
+        - VITE_SKIP_AUTH=true
+        - VITE_ENV=DEV
+        - VITE_CHUNK_SIZE=5242880
+        - VITE_BATCH_SIZE=2
+        - VITE_LLM_MODELS_PROD=openrouter_free
+        - VITE_CHUNK_OVERLAP=50
+        - VITE_TOKENS_PER_CHUNK=512
+    container_name: legal_graph_ui_uz
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - legal_net
+    environment:
+      - VITE_BACKEND_API_URL=http://backend:8000
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+
+networks:
+  legal_net:
+    driver: bridge
