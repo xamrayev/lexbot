@@ -1,85 +1,231 @@
-# Graph-RAG API
+# 🚀 GraphRAG - O'zbekiston Mehnat Kodeksi AI Yordamchisi
 
-Lightweight graph + vector dual retrieval pipeline with FastAPI.
-Plug in **any OpenAI-compatible LLM provider** — no code changes needed.
+Ushbu loyiha O'zbekiston Respublikasi Mehnat Kodeksiga nisbatan savollarga javob berish uchun mo'ljallangan GraphRAG (Graph Retrieval-Augmented Generation) tizimi.
 
-## Quick start
+## 📁 Loyiha tuzilishi
 
-```bash
-# 1. install deps
-pip install -r requirements.txt
-python -m spacy download en_core_web_sm   # optional, for better NER
-
-# 2. configure
-cp .env.example .env
-# edit .env with your keys and preferred provider
-
-# 3. run
-uvicorn app.main:app --reload
+```
+graph_rag_api/
+├── .env                        # Konfiguratsiya fayli
+├── docker-compose.yml          # Docker orkestratsiyasi
+├── Dockerfile                  # Backend Docker obraz
+├── requirements.txt            # Python bog'liqliklar
+├── main.py                     # FastAPI backend
+├── README.md                   # Ushbu fayl
+├── data/
+│   └── mehnat_kodeksi_processed.json  # Ma'lumotlar JSON
+└── chat/
+    └── app.py                  # Streamlit chat interfeys
 ```
 
-API docs: http://localhost:8000/docs
+## ⚙️ Sozlash
 
-## Provider configuration
+### 1️⃣ `.env` faylini sozlash
 
-Edit `.env` — no code changes:
-
-| Provider       | LLM_BASE_URL                                              | LLM_MODEL example        |
-|----------------|-----------------------------------------------------------|--------------------------|
-| OpenRouter     | https://openrouter.ai/api/v1                              | qwen/qwen3-8b            |
-| Qwen API       | https://dashscope.aliyuncs.com/compatible-mode/v1        | qwen-plus                |
-| OpenAI         | https://api.openai.com/v1                                 | gpt-4o-mini              |
-| Together AI    | https://api.together.xyz/v1                               | meta-llama/Llama-3-8b    |
-| Groq           | https://api.groq.com/openai/v1                            | llama-3.1-8b-instant     |
-| Mistral        | https://api.mistral.ai/v1                                 | mistral-small-latest     |
-| Ollama (local) | http://localhost:11434/v1                                 | qwen2.5:7b               |
-| LM Studio      | http://localhost:1234/v1                                  | any loaded model         |
-
-> **Embeddings** can use a different provider than the LLM.
-> Set `EMBED_BASE_URL` and `EMBED_API_KEY` separately.
-> For local embeddings via Ollama: `EMBED_BASE_URL=http://localhost:11434/v1`, `EMBED_MODEL=nomic-embed-text`.
-
-## API endpoints
-
-| Method | Path      | Description                        |
-|--------|-----------|------------------------------------|
-| GET    | /health   | Status, model info, chunk count    |
-| POST   | /ingest   | Add a document to the knowledge base |
-| POST   | /query    | Ask a question (dual retrieval + LLM) |
-| GET    | /graph    | Inspect entity graph (nodes + edges) |
-
-## Example usage
+`.env` faylini oching va quyidagi qiymatlarni o'zingizga moslang:
 
 ```bash
-# ingest
-curl -X POST http://localhost:8000/ingest \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Elon Musk founded SpaceX in 2002. SpaceX is based in Hawthorne, California.", "metadata": {"source": "test"}}'
+# LLM (agar OpenAI ishlatilsa)
+OPENAI_API_KEY=sk-... # Haqiqiy kalitni kiriting
 
-# query
+# Agar Ollama ishlatilsa:
+# OPENAI_API_BASE=http://host.docker.internal:11434/v1
+# LLM_MODEL=llama3.1
+
+# Agar OpenAI ishlatilsa:
+OPENAI_API_BASE=https://api.openai.com/v1
+LLM_MODEL=gpt-4o-mini
+```
+
+### 2️⃣ Ma'lumotlar faylini joylashtirish
+
+Öz zamonaviy `mehnat_kodeksi_processed.json` faylingizni `data/` papkasiga joylashtiring:
+
+```bash
+cp /path/to/your/mehnat_kodeksi_processed.json graph_rag_api/data/
+```
+
+**JSON format:**
+```json
+{
+  "chunks": [
+    {
+      "id": "chunk_001",
+      "text": "Matn qismi...",
+      "metadata": {
+        "modda_number": "115",
+        "code": "MK",
+        "bob_title": "Bob nomi"
+      }
+    }
+  ]
+}
+```
+
+## 🐳 Ishga tushirish
+
+### Docker bilan (Tavsiya etiladi)
+
+```bash
+# Loyiha papkasiga o'ting
+cd graph_rag_api
+
+# Barcha xizmatlarni ishga tushiring
+docker-compose up -d
+
+# Loglarni tekshiring
+docker-compose logs -f backend
+
+# Ma'lumotlarni yuklash (agar avtomatik bo'lmasa)
+curl -X POST http://localhost:8000/upload
+
+# Xizmat to'xtatilganda
+docker-compose down
+```
+
+### Mahalliylashtirilgan ishga tushirish (Dockersiz)
+
+```bash
+# 1. Virtual muhit yaratish
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 2. Bog'liqliklarni o'rnatish
+pip install -r requirements.txt
+
+# 3. Neo4j ishga tushiring (alohida container)
+docker run -d --name neo4j \
+  -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/LegalGraph2024! \
+  neo4j:5.23-community
+
+# 4. Backend ishga tushiring
+python main.py
+
+# 5. Chat interfeysini ishga tushiring (boshqa terminal)
+cd chat
+streamlit run app.py
+```
+
+## 🌐 Foydalanish
+
+| Interfeys | Manzil |
+|-----------|--------|
+| **Chat UI** | http://localhost:8501 |
+| **Neo4j Browser** | http://localhost:7474 |
+| **API Dokumentatsiya** | http://localhost:8000/docs |
+| **Health Check** | http://localhost:8000/health |
+
+## 📝 API Endpointlari
+
+### POST /query
+Savol yuboring va javob oling.
+
+```bash
 curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "Who founded SpaceX and where is it located?"}'
+  -d '{"query": "Yillik ta\'til necha kun?"}'
 ```
 
-## Architecture
-
+**Javob namunasi:**
+```json
+{
+  "answer": "O'zbekiston Mehnat Kodeksiga ko'ra, yillik asosiy ta'til 21 kalendar kunidan kam bo'lmasdan beriladi.",
+  "sources": [
+    {
+      "text": "O'zbekiston Respublikasi Mehnat kodeksiga muvofiq...",
+      "modda_number": "115",
+      "code": "MK",
+      "score": 0.97
+    }
+  ],
+  "modda_numbers": ["115"]
+}
 ```
-POST /ingest  →  chunk text  →  embed (batch)  →  ChromaDB
-                              →  extract entities (spaCy)  →  NetworkX graph
 
-POST /query   →  embed question  →  vector search (ChromaDB)
-                               →  entity NER  →  graph BFS expand
-                               →  merge + rerank  →  LLM (any provider)
+### POST /upload
+Ma'lumotlarni Neo4j ga yuklash.
+
+```bash
+curl -X POST "http://localhost:8000/upload"
 ```
 
-## Swap components
+### GET /health
+Xizmat holatini tekshirish.
 
-- **Graph DB**: replace `NetworkX` in `app/graph_store.py` with Neo4j — same interface
-- **Vector DB**: replace `ChromaDB` in `app/vector_store.py` with Qdrant/FAISS
-- **NER**: replace spaCy in `app/entities.py` with an LLM-based extractor
-- **Chunker**: replace word-splitter in `app/ingest.py` with `tiktoken`-based splitter
-# lexbot
-# lexbot
-# lexbot
-# lexbot
+```bash
+curl http://localhost:8000/health
+```
+
+## 🧪 Test savollar
+
+Quyidagi savollar bilan tizimni sinab ko'ring:
+
+| Savol (O'zbek tilida) | Kutilayotgan natija |
+|----------------------|---------------------|
+| "Yillik mehnat ta'tili qancha kun?" | 21 kun haqida ma'lumot |
+| "Ishdan bo'shatish asoslari" | Bo'shatish sabablari ro'yxati |
+| "Dekret ta'tili shartlari" | Homila va bolani parvarish qilish ta'tili |
+| "115-modda haqida ma'lumot" | 115-modda matni |
+| "Mehnat haqi qanchadan marta to'lanadi?" | Oyiga kamida bir marta |
+
+## 🔧 LLM Proveyderlarini sozlash
+
+### OpenAI
+```bash
+OPENAI_API_BASE=https://api.openai.com/v1
+LLM_MODEL=gpt-4o-mini
+```
+
+### Ollama (Mahalliylashgan)
+```bash
+OPENAI_API_BASE=http://host.docker.internal:11434/v1
+LLM_MODEL=llama3.1
+```
+
+### vLLM
+```bash
+OPENAI_API_BASE=http://sizning-serveringiz:8000/v1
+LLM_MODEL=mistral-7b
+```
+
+### SambaNova
+```bash
+OPENAI_API_BASE=https://api.sambanova.ai/v1
+LLM_MODEL=Meta-Llama-3.1-70B
+```
+
+## ⚠️ Muhim eslatmalar
+
+1. **Embedding Model**: `paraphrase-multilingual-MiniLM-L12-v2` o'zbek tilini qo'llab-quvvatlaydi
+2. **Neo4j Parolemlar**: Vector index va genai procedurelari ruxsat etilgan
+3. **Xotira**: Neo4j uchun kamida 4GB RAM tavsiya etiladi
+4. **Portlar**: 7474, 7687, 8000, 8501 portlarining bo'sh ekanligini tekshiring
+
+## 🛠 Muammolarni hal qilish
+
+### Neo4j ulanmayapti
+```bash
+docker-compose logs neo4j
+```
+
+### Backend ma'lumotlarni yuklamayapti
+```bash
+docker-compose logs backend
+curl http://localhost:8000/upload
+```
+
+### Embedding modeli yuklanmayapti
+Birinchi ishga tushirishda modelni yuklash uchun internet kerak. Keyingi marotoba offline ishlaydi.
+
+## 📚 Texnik ma'lumotlar
+
+- **Python**: 3.11
+- **FastAPI**: 0.109.0
+- **Neo4j**: 5.23 (Community)
+- **Sentence Transformers**: 2.3.1
+- **OpenAI SDK**: 1.12.0
+
+## 📄 Litsenziya
+
+Bu loyiha ta'lim maqsadida yaratilgan. Mehnat Kodeksining rasmiy matni faqat O'zbekiston Respublikasi Vazirlar Mahkamasining rasmiy saytidan olinishi kerak.
