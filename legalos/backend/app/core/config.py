@@ -61,6 +61,24 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
 
+    # SSO (OIDC) — Enterprise/Government single sign-on
+    oidc_discovery_url: str = ""  # e.g. https://idp.example.uz/.well-known/openid-configuration
+    oidc_client_id: str = ""
+    oidc_client_secret: str = ""
+    oidc_redirect_uri: str = ""  # e.g. https://legalos.example.uz/api/v1/auth/sso/callback
+    sso_tenant_slug: str = "sso"  # tenant that SSO users are provisioned into
+    sso_auto_provision: bool = True  # create unknown users on first SSO login
+    sso_state_ttl_seconds: int = 600
+
+    # Knowledge Graph (optional Neo4j; RAG works without it)
+    neo4j_uri: str = ""  # e.g. bolt://neo4j:7687 — empty disables graph expansion
+    neo4j_username: str = "neo4j"
+    neo4j_password: str = ""
+    neo4j_database: str = "neo4j"
+
+    # RAG reranker: "llm" (listwise LLM) or "none" (fusion order)
+    rag_reranker: str = "llm"
+
     # External sources
     lex_uz_base_url: str = "https://lex.uz"
     norma_uz_base_url: str = "https://norma.uz"

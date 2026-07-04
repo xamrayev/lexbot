@@ -106,6 +106,8 @@ RAG Security: SQL-фильтр `tenant_id IN (свой, LEGISLATION_TENANT)` —
 - [x] Экспорт PDF — `POST /api/v1/documents/generate` с `format: "pdf"` (fpdf2 + DejaVu для кириллицы/узбекского)
 - [x] Интеграция госсервисов — каталог MyGov/Soliq/e-imzo/mehnat.uz с deep links, подбор по запросу: `GET /api/v1/gov/services?query=...`
 - [x] Compliance Center — подписки на акты (`/compliance/watches`), уведомления об изменениях законодательства для подписанных тенантов, LLM-проверка документов на соответствие (`POST /compliance/checks/{document_id}`); только Enterprise/Government
-- [ ] SSO (SAML/OIDC) для Enterprise; интеграция ERP/CRM/HRM
+- [x] SSO (OIDC, authorization-code flow) — `GET /api/v1/auth/sso/login` → IdP → `/callback` → JWT; JIT-провижининг в SSO-тенант, HMAC-подписанный state без серверной сессии; совместим с Keycloak/Azure AD/Okta
+- [x] Neo4j `graph_expander` — опциональное расширение Hybrid Search графом знаний (`LEGALOS_NEO4J_URI`; полный graceful degradation без Neo4j); reranker конфигурируем (`LEGALOS_RAG_RERANKER: llm | none`)
+- [ ] SAML для государственных IdP; интеграция ERP/CRM/HRM
 - [ ] Microsoft Teams бот; глубокая интеграция MyGov/Soliq (API, не только deep links)
-- [ ] Neo4j `graph_expander` в проде; продвинутый reranker (cross-encoder)
+- [ ] Cross-encoder reranker

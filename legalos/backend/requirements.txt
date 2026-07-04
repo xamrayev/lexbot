@@ -20,3 +20,5 @@ fpdf2>=2.7
 
 # Document Intelligence (heavy; optional in dev — pipeline falls back to text decode)
 # docling>=2.0
+# Knowledge Graph expansion (optional; RAG works without it)
+# neo4j>=5.20
