@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -80,6 +81,7 @@ class DocumentOut(BaseModel):
 class GenerateDocumentRequest(BaseModel):
     doc_type: str = "order"  # see services/documents/generate.DOC_TYPES
     instructions: str = Field(min_length=5, max_length=8000)
+    format: Literal["docx", "pdf"] = "docx"
     provider: str | None = None
 
 

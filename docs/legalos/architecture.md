@@ -103,6 +103,9 @@ RAG Security: SQL-фильтр `tenant_id IN (свой, LEGISLATION_TENANT)` —
 - [x] Стриминговые ответы — SSE `POST /api/v1/chat/stream` через `AIProvider.stream()`
 - [x] Генерация кадровых документов с экспортом DOCX — `POST /api/v1/documents/generate` (приказ, заявление, объяснительная, трудовой договор, уведомление, справка)
 - [x] Загрузка Трудового кодекса РУз в базу знаний — `python -m app.scripts.seed_labor_code`
+- [x] Экспорт PDF — `POST /api/v1/documents/generate` с `format: "pdf"` (fpdf2 + DejaVu для кириллицы/узбекского)
+- [x] Интеграция госсервисов — каталог MyGov/Soliq/e-imzo/mehnat.uz с deep links, подбор по запросу: `GET /api/v1/gov/services?query=...`
+- [x] Compliance Center — подписки на акты (`/compliance/watches`), уведомления об изменениях законодательства для подписанных тенантов, LLM-проверка документов на соответствие (`POST /compliance/checks/{document_id}`); только Enterprise/Government
 - [ ] SSO (SAML/OIDC) для Enterprise; интеграция ERP/CRM/HRM
-- [ ] Microsoft Teams бот; интеграции MyGov/Soliq (deep links → API)
-- [ ] Экспорт PDF; Neo4j `graph_expander` в проде; Compliance Center; продвинутый reranker (cross-encoder)
+- [ ] Microsoft Teams бот; глубокая интеграция MyGov/Soliq (API, не только deep links)
+- [ ] Neo4j `graph_expander` в проде; продвинутый reranker (cross-encoder)

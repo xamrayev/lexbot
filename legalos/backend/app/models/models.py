@@ -203,6 +203,48 @@ class LegislativeRevision(Base):
     act: Mapped[LegislativeAct] = relationship(back_populates="revisions")
 
 
+class ComplianceWatch(Base):
+    """A tenant's subscription to changes of a legislative act (Compliance Center)."""
+
+    __tablename__ = "compliance_watches"
+    __table_args__ = (UniqueConstraint("tenant_id", "act_id", name="uq_watch_tenant_act"),)
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    act_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("legislative_acts.id"), index=True)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ComplianceCheck(Base):
+    """Result of an LLM compliance review of a corporate document."""
+
+    __tablename__ = "compliance_checks"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    document_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("documents.id"), index=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(String(16), default="ok")  # ok | issues | failed
+    findings: Mapped[list] = mapped_column(JSON, default=list)  # [{severity, issue, recommendation, article}]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Notification(Base):
+    """In-app notification (e.g. 'legislation changed' for watched acts)."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(64), default="legislation.changed")
+    title: Mapped[str] = mapped_column(String(512))
+    body: Mapped[str] = mapped_column(Text, default="")
+    meta: Mapped[dict] = mapped_column(JSON, default=dict)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AuditLog(Base):
     """Append-only audit trail for security-relevant actions."""
 

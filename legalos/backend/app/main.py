@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import agents, auth, chat, documents, legislation, search
+from app.api.v1 import agents, auth, chat, compliance, documents, gov, legislation, search
 from app.core.config import get_settings
 from app.db.base import Base, engine
 from app.services.ai.registry import list_providers
@@ -49,6 +49,8 @@ def create_app() -> FastAPI:
     app.include_router(agents.router, prefix=prefix)
     app.include_router(search.router, prefix=prefix)
     app.include_router(legislation.router, prefix=prefix)
+    app.include_router(gov.router, prefix=prefix)
+    app.include_router(compliance.router, prefix=prefix)
 
     @app.get("/health")
     async def health():
