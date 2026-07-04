@@ -76,6 +76,13 @@ class DocumentOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# --- Document generation ---
+class GenerateDocumentRequest(BaseModel):
+    doc_type: str = "order"  # see services/documents/generate.DOC_TYPES
+    instructions: str = Field(min_length=5, max_length=8000)
+    provider: str | None = None
+
+
 # --- Search ---
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=2000)
