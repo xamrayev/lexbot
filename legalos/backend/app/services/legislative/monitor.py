@@ -15,7 +15,7 @@ import httpx
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import DocumentChunk, LegislativeAct, LegislativeRevision
+from app.models import ComplianceWatch, DocumentChunk, LegislativeAct, LegislativeRevision, Notification
 from app.services.documents.ingest import split_into_chunks
 from app.services.ai.registry import get_embedding_provider
 from app.services.rag.retrieval import LEGISLATION_TENANT_ID
@@ -80,5 +80,21 @@ async def check_act_for_changes(db: AsyncSession, act: LegislativeAct) -> bool:
         )
     )
     await reindex_act(db, act, text)
+    await notify_watchers(db, act)
     await db.flush()
     return True
+
+
+async def notify_watchers(db: AsyncSession, act: LegislativeAct) -> None:
+    """Create in-app notifications for every tenant watching this act (Compliance Center)."""
+    rows = await db.execute(select(ComplianceWatch.tenant_id).where(ComplianceWatch.act_id == act.id).distinct())
+    for tenant_id in rows.scalars():
+        db.add(
+            Notification(
+                tenant_id=tenant_id,
+                kind="legislation.changed",
+                title=f"Изменение законодательства: {act.title[:400]}",
+                body=f"Обнаружена новая редакция №{act.current_revision}. Проверьте влияние на документы организации.",
+                meta={"act_id": str(act.id), "revision": act.current_revision, "url": act.url},
+            )
+        )

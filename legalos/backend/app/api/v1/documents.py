@@ -16,6 +16,7 @@ from app.schemas import DocumentOut, GenerateDocumentRequest
 from app.services.billing.plans import PlanLimitExceeded, check_and_increment, get_tenant_plan
 from app.services.documents.generate import DOC_TYPES, generate_document
 from app.services.documents.ingest import classify_document, convert_to_text, index_document
+from app.services.documents.pdf import build_pdf
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -109,13 +110,21 @@ async def generate(
         )
     except ValueError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
-    await write_audit(db, request, user, "document.generate", detail={"doc_type": body.doc_type})
+    await write_audit(
+        db, request, user, "document.generate", detail={"doc_type": body.doc_type, "format": body.format}
+    )
     await db.commit()
 
-    filename = quote(f"{generated.title[:60]}.docx")
+    if body.format == "pdf":
+        payload = build_pdf(generated.text)
+        media_type = "application/pdf"
+    else:
+        payload = generated.docx
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    filename = quote(f"{generated.title[:60]}.{body.format}")
     return Response(
-        content=generated.docx,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        content=payload,
+        media_type=media_type,
         headers={
             "Content-Disposition": f"attachment; filename*=UTF-8''{filename}",
             "X-Document-Title": quote(generated.title),
