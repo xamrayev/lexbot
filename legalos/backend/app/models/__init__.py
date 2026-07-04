@@ -1,0 +1,31 @@
+from app.models.models import (
+    AuditLog,
+    Conversation,
+    Document,
+    DocumentChunk,
+    LegislativeAct,
+    LegislativeRevision,
+    Message,
+    PlanTier,
+    Subscription,
+    Tenant,
+    UsageCounter,
+    User,
+    UserRole,
+)
+
+__all__ = [
+    "AuditLog",
+    "Conversation",
+    "Document",
+    "DocumentChunk",
+    "LegislativeAct",
+    "LegislativeRevision",
+    "Message",
+    "PlanTier",
+    "Subscription",
+    "Tenant",
+    "UsageCounter",
+    "User",
+    "UserRole",
+]
