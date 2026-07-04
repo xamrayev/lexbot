@@ -47,7 +47,7 @@
 1. **BM25** — PostgreSQL full-text (`ts_rank_cd`);
 2. **Vector** — pgvector, cosine (`<=>`);
 3. **Fusion** — Reciprocal Rank Fusion (устойчив к разным шкалам скоров);
-4. **Knowledge Graph** — hook `graph_expander`, куда подключается существующий Neo4j GraphRAG (корень репозитория, `backend/`);
+4. **Knowledge Graph** — hook `graph_expander`, куда подключается внешний граф знаний (например, Neo4j GraphRAG);
 5. **Reranker** — listwise LLM-reranker с фолбэком на порядок fusion;
 6. Ответ агента сопровождается **цитатами** (`sources`), которые фронтенд подсвечивает в правой панели.
 

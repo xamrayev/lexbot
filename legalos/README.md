@@ -73,6 +73,6 @@ legalos/
 - **Безопасность** — JWT/OAuth2, RBAC (owner/admin/manager/member/viewer), append-only Audit Log, эвристический экран prompt-injection, изоляция извлечённого контекста.
 - **Legislative Intelligence** — редакции законов неизменяемы (`legislative_revisions`), изменения детектируются по хэшу, автоматически переиндексируются.
 
-## Связь с существующим GraphRAG
+## Knowledge Graph
 
-Каталог `../backend` (Neo4j llm-graph-builder для Трудового кодекса) остаётся самостоятельным компонентом Knowledge Graph. RAG-пайплайн LegalOS принимает `graph_expander`-хук (`services/rag/pipeline.py`), через который граф Neo4j подключается как четвёртый источник Hybrid Search.
+RAG-пайплайн принимает `graph_expander`-хук (`services/rag/pipeline.py`), через который внешний Knowledge Graph (например, Neo4j GraphRAG) подключается как дополнительный источник Hybrid Search. Датасет Трудового кодекса для наполнения базы знаний — `../data/mehnat_kodeksi_processed.json`.
