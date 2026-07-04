@@ -1,5 +1,7 @@
 # 🚀 llm-graph-builder — O'zbekiston Mehnat Kodeksi
 
+> **🆕 Enterprise LegalOS** — корпоративная AI-платформа (FastAPI + Next.js + pgvector, мульти-агенты, тарифы Free→Government) находится в каталоге [`legalos/`](legalos/README.md). Архитектура: [`docs/legalos/architecture.md`](docs/legalos/architecture.md). Существующий Neo4j GraphRAG (ниже) подключается к ней как Knowledge Graph-компонент Hybrid Search.
+
 Neo4j Labs'ning **llm-graph-builder** loyihasi asosida O'zbekiston Mehnat Kodeksi uchun GraphRAG tizimi.
 
 ## 📋 Qisqacha Ma'lumot
