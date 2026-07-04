@@ -99,9 +99,10 @@ RAG Security: SQL-фильтр `tenant_id IN (свой, LEGISLATION_TENANT)` —
 
 ## 9. Roadmap
 
-- [ ] Alembic-миграции вместо dev-`create_all`
+- [x] Alembic-миграции (`backend/migrations/`, baseline `0001`; dev по-прежнему может использовать `create_all`)
+- [x] Стриминговые ответы — SSE `POST /api/v1/chat/stream` через `AIProvider.stream()`
+- [x] Генерация кадровых документов с экспортом DOCX — `POST /api/v1/documents/generate` (приказ, заявление, объяснительная, трудовой договор, уведомление, справка)
+- [x] Загрузка Трудового кодекса РУз в базу знаний — `python -m app.scripts.seed_labor_code`
 - [ ] SSO (SAML/OIDC) для Enterprise; интеграция ERP/CRM/HRM
 - [ ] Microsoft Teams бот; интеграции MyGov/Soliq (deep links → API)
-- [ ] Генерация кадровых документов по шаблонам (экспорт DOCX/PDF)
-- [ ] Neo4j `graph_expander` в проде; Compliance Center; продвинутый reranker (cross-encoder)
-- [ ] Стриминговые ответы (SSE) через `AIProvider.stream()`
+- [ ] Экспорт PDF; Neo4j `graph_expander` в проде; Compliance Center; продвинутый reranker (cross-encoder)

@@ -37,8 +37,15 @@ docker compose --profile telegram up -d telegram-bot
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload   # требует запущенный PostgreSQL с pgvector
-pytest tests/                    # smoke-тесты без внешних сервисов
+alembic upgrade head             # миграции схемы (prod-путь; dev создаёт таблицы сам)
+uvicorn app.main:app --reload    # требует запущенный PostgreSQL с pgvector
+pytest tests/                    # тесты без внешних сервисов
+```
+
+Наполнение базы знаний Трудовым кодексом РУз (632 статьи, `../data/`):
+
+```bash
+python -m app.scripts.seed_labor_code ../../data/mehnat_kodeksi_processed.json
 ```
 
 ## Структура
