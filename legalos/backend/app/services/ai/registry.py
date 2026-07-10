@@ -19,7 +19,7 @@ def _build_registry() -> dict[str, AIProvider]:
             "openai", s.openai_base_url, s.openai_api_key, s.default_ai_model, s.embedding_model
         ),
         "deepseek": OpenAICompatibleProvider("deepseek", s.deepseek_base_url, s.deepseek_api_key, "deepseek-chat"),
-        "gemini": OpenAICompatibleProvider("gemini", s.gemini_base_url, s.gemini_api_key, "gemini-2.0-flash"),
+        "gemini": OpenAICompatibleProvider("gemini", s.gemini_base_url, s.gemini_api_key, "gemini-flash-latest"),
         "qwen": OpenAICompatibleProvider("qwen", s.qwen_base_url, s.qwen_api_key, "qwen-plus"),
     }
     if s.compatible_base_url:
