@@ -11,7 +11,7 @@
 
 | Часть | Тема | Статус |
 |---|---|---|
-| 1 | CI и тестовый фундамент | ⬜ |
+| 1 | CI и тестовый фундамент | ✅ (PR #6) |
 | 2 | Legislative Intelligence: парсинг Lex.uz и планировщик | ⬜ |
 | 3 | Качество RAG: чанкинг, reranker, оценка | ⬜ |
 | 4 | Безопасность: Redis-лимиты, токены, prompt-injection, шифрование/бэкапы | ⬜ |
@@ -25,11 +25,11 @@
 **Зачем:** ни одной автоматической проверки в репозитории нет; всё последующее
 опасно менять без страховки.
 
-- [ ] **CI (GitHub Actions)** — `.github/workflows/ci.yml`:
+- [x] **CI (GitHub Actions)** — `.github/workflows/ci.yml`:
   джоб `backend` (Python 3.11, `pip install -r legalos/backend/requirements.txt pytest`,
   `pytest legalos/backend/tests/`), джоб `frontend` (Node 20, `npm ci`, `npm run build`
   в `legalos/frontend/`). Триггеры: push в `main`, все PR.
-- [ ] **API-тесты с БД** — `legalos/backend/tests/test_api_integration.py`:
+- [x] **API-тесты с БД** — `legalos/backend/tests/test_api_integration.py`:
   поднимать PostgreSQL+pgvector как service-container в CI
   (`pgvector/pgvector:pg16`); фикстура `app` с `create_all` на тестовой БД;
   через `httpx.ASGITransport` прогнать сценарий: регистрация → логин → `/auth/me`
