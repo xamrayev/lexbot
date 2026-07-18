@@ -12,7 +12,7 @@
 | Часть | Тема | Статус |
 |---|---|---|
 | 1 | CI и тестовый фундамент | ✅ (PR #6) |
-| 2 | Legislative Intelligence: парсинг Lex.uz и планировщик | ⬜ |
+| 2 | Legislative Intelligence: парсинг Lex.uz и планировщик | ✅ (PR #7) |
 | 3 | Качество RAG: чанкинг, reranker, оценка | ⬜ |
 | 4 | Безопасность: Redis-лимиты, токены, prompt-injection, шифрование/бэкапы | ⬜ |
 | 5 | Надёжность и наблюдаемость: worker, метрики, логи | ⬜ |
@@ -47,7 +47,7 @@
 редакция», в индекс попадает разметка), а мониторинг никто не запускает по
 расписанию.
 
-- [ ] **Парсинг Lex.uz** — новый модуль `app/services/legislative/parser.py`:
+- [x] **Парсинг Lex.uz** — новый модуль `app/services/legislative/parser.py`:
   `extract_act_text(html) -> str` — вытащить чистый текст акта (BeautifulSoup;
   выкинуть script/style/nav, схлопнуть пробелы); `split_by_articles(text)` —
   разбор по статьям регекспом на `N-modda`/`Статья N` с фолбэком на
@@ -55,7 +55,7 @@
   (`monitor.check_act_for_changes`); чанки актов делать по-статейно с метой
   `article`. Зависимость: `beautifulsoup4` в requirements. Чистые функции —
   покрыть тестами на образце HTML (фикстура в `tests/fixtures/`).
-- [ ] **Планировщик мониторинга** — периодическая задача в worker
+- [x] **Планировщик мониторинга** — периодическая задача в worker
   (`app/workers/consumer.py`): asyncio-цикл `scheduler_loop()`, который раз в
   `LEGALOS_LEGISLATION_CHECK_INTERVAL_HOURS` (дефолт 24) выбирает все акты и
   публикует по сообщению в очередь `legalos.legislation`. Джиттер и лог

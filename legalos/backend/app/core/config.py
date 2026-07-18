@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     # RAG reranker: "llm" (listwise LLM) or "none" (fusion order)
     rag_reranker: str = "llm"
 
+    # Legislative monitoring: how often the worker enqueues checks of all
+    # tracked acts (0 disables the scheduler; manual sync stays available)
+    legislation_check_interval_hours: int = 24
+
     # External sources
     lex_uz_base_url: str = "https://lex.uz"
     norma_uz_base_url: str = "https://norma.uz"
