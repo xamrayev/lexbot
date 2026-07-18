@@ -6,6 +6,7 @@ gracefully in minimal environments.
 """
 
 import io
+import re
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +19,9 @@ CHUNK_SIZE = 1600  # characters, ~400 tokens
 CHUNK_OVERLAP = 200
 
 CATEGORIES = ["employment_contract", "order", "policy", "letter", "accounting", "contract", "other"]
+
+_HEADING = re.compile(r"^#{1,6}\s+(?P<title>.+)$")
+_SENTENCE_END = re.compile(r"(?<=[.!?…:;])\s+")
 
 
 def convert_to_text(filename: str, content: bytes, mime_type: str) -> str:
@@ -36,16 +40,76 @@ def convert_to_text(filename: str, content: bytes, mime_type: str) -> str:
     return content.decode("utf-8", errors="replace")
 
 
+def _split_units(paragraph: str) -> list[str]:
+    """Sentences of a paragraph; any unit longer than CHUNK_SIZE is hard-wrapped."""
+    units: list[str] = []
+    for sentence in _SENTENCE_END.split(paragraph):
+        sentence = sentence.strip()
+        while len(sentence) > CHUNK_SIZE:
+            units.append(sentence[:CHUNK_SIZE])
+            sentence = sentence[CHUNK_SIZE:]
+        if sentence:
+            units.append(sentence)
+    return units
+
+
+def structured_chunks(text: str) -> list[dict]:
+    """Structure-aware chunking: ``{"text": str, "section": str}``.
+
+    Packing respects paragraph (blank line) and sentence boundaries — a
+    sentence is never cut mid-way unless it alone exceeds CHUNK_SIZE.
+    Markdown headings (Docling output) start a new chunk and become the
+    chunk's ``section``; overlap between size-split chunks is the trailing
+    sentences of the previous chunk (up to CHUNK_OVERLAP chars) so a thought
+    crossing the boundary stays intact in one of them.
+    """
+    chunks: list[dict] = []
+    section = ""
+    buffer: list[str] = []
+    buffer_len = 0
+
+    def flush(carry_overlap: bool) -> None:
+        nonlocal buffer, buffer_len
+        if not buffer:
+            return
+        chunks.append({"text": "\n".join(buffer).strip(), "section": section})
+        if carry_overlap:
+            overlap: list[str] = []
+            size = 0
+            for unit in reversed(buffer):
+                if size + len(unit) > CHUNK_OVERLAP:
+                    break
+                overlap.insert(0, unit)
+                size += len(unit) + 1
+            buffer = overlap
+            buffer_len = size
+        else:
+            buffer = []
+            buffer_len = 0
+
+    for raw_paragraph in text.split("\n\n"):
+        paragraph = raw_paragraph.strip()
+        if not paragraph:
+            continue
+        for line_or_unit in paragraph.splitlines():
+            heading = _HEADING.match(line_or_unit.strip())
+            if heading:
+                flush(carry_overlap=False)  # sections don't bleed into each other
+                section = heading.group("title").strip()
+                buffer = [line_or_unit.strip()]
+                buffer_len = len(line_or_unit)
+                continue
+            for unit in _split_units(line_or_unit):
+                if buffer_len + len(unit) > CHUNK_SIZE:
+                    flush(carry_overlap=True)
+                buffer.append(unit)
+                buffer_len += len(unit) + 1
+    flush(carry_overlap=False)
+    return [c for c in chunks if c["text"]]
+
+
 def split_into_chunks(text: str) -> list[str]:
-    chunks: list[str] = []
-    start = 0
-    while start < len(text):
-        end = start + CHUNK_SIZE
-        chunks.append(text[start:end])
-        if end >= len(text):
-            break
-        start = end - CHUNK_OVERLAP
-    return [c.strip() for c in chunks if c.strip()]
+    return [chunk["text"] for chunk in structured_chunks(text)]
 
 
 async def classify_document(text: str) -> str:
@@ -64,26 +128,29 @@ async def classify_document(text: str) -> str:
 
 
 async def index_document(db: AsyncSession, document: Document, text: str) -> int:
-    """Chunk, embed, and store a document. Returns the number of chunks."""
-    chunk_texts = split_into_chunks(text)
+    """Chunk (structure-aware), embed, and store a document. Returns the chunk count."""
+    chunks = structured_chunks(text)
     embeddings: list[list[float] | None]
     try:
-        embeddings = list(await get_embedding_provider().embed(chunk_texts))
+        embeddings = list(await get_embedding_provider().embed([c["text"] for c in chunks]))
     except Exception:
-        embeddings = [None] * len(chunk_texts)  # BM25-only until reindexed
+        embeddings = [None] * len(chunks)  # BM25-only until reindexed
 
-    for seq, (chunk_text, embedding) in enumerate(zip(chunk_texts, embeddings)):
+    for seq, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+        meta = {"title": document.title, "document_id": str(document.id), "category": document.category}
+        if chunk["section"]:
+            meta["section"] = chunk["section"]
         db.add(
             DocumentChunk(
                 id=uuid.uuid4(),
                 tenant_id=document.tenant_id,
                 document_id=document.id,
                 seq=seq,
-                text=chunk_text,
+                text=chunk["text"],
                 embedding=embedding,
-                meta={"title": document.title, "document_id": str(document.id), "category": document.category},
+                meta=meta,
             )
         )
     document.status = "ready"
     await db.flush()
-    return len(chunk_texts)
+    return len(chunks)

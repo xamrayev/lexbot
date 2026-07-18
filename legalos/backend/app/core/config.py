@@ -76,8 +76,10 @@ class Settings(BaseSettings):
     neo4j_password: str = ""
     neo4j_database: str = "neo4j"
 
-    # RAG reranker: "llm" (listwise LLM) or "none" (fusion order)
+    # RAG reranker: "llm" (listwise LLM), "cross_encoder" (local
+    # sentence-transformers model), or "none" (fusion order)
     rag_reranker: str = "llm"
+    cross_encoder_model: str = "BAAI/bge-reranker-v2-m3"
 
     # Legislative monitoring: how often the worker enqueues checks of all
     # tracked acts (0 disables the scheduler; manual sync stays available)

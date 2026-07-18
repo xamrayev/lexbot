@@ -13,7 +13,7 @@
 |---|---|---|
 | 1 | CI и тестовый фундамент | ✅ (PR #6) |
 | 2 | Legislative Intelligence: парсинг Lex.uz и планировщик | ✅ (PR #7) |
-| 3 | Качество RAG: чанкинг, reranker, оценка | ⬜ |
+| 3 | Качество RAG: чанкинг, reranker, оценка | ✅ (PR #7) |
 | 4 | Безопасность: Redis-лимиты, токены, prompt-injection, шифрование/бэкапы | ⬜ |
 | 5 | Надёжность и наблюдаемость: worker, метрики, логи | ⬜ |
 | 6 | UX и мелочи: история чата, сессии бота, i18n, пагинация | ⬜ |
@@ -72,20 +72,20 @@
 **Зачем:** символьная резка ломает предложения и игнорирует структуру;
 LLM-reranker дорог; качество поиска не измеряется.
 
-- [ ] **Структурный чанкинг** — в `app/services/documents/ingest.py`:
+- [x] **Структурный чанкинг** — в `app/services/documents/ingest.py`:
   `split_into_chunks` резать по границам абзацев (`\n\n`), затем предложений,
   с добивкой до `CHUNK_SIZE` и перекрытием на уровне последних предложений;
   Markdown-заголовки от Docling начинают новый чанк и попадают в мету
   (`section`). Инварианты старых тестов сохранить (покрытие всего текста,
   максимум длины).
-- [ ] **Cross-encoder reranker** — `app/services/rag/rerankers.py`: третий режим
+- [x] **Cross-encoder reranker** — `app/services/rag/rerankers.py`: третий режим
   `LEGALOS_RAG_RERANKER=cross_encoder` — ленивый `sentence-transformers`
   CrossEncoder (`BAAI/bge-reranker-v2-m3` или конфигурируемый
   `LEGALOS_CROSS_ENCODER_MODEL`), опциональная зависимость (закомментирована в
   requirements как docling/neo4j); при недоступности — фолбэк на порядок
   fusion с warning-логом. Вынести текущий LLM-reranker туда же, `pipeline.py`
   выбирает стратегию по настройке.
-- [ ] **Оценка качества** — `app/scripts/rag_eval.py` + датасет
+- [x] **Оценка качества** — `app/scripts/rag_eval.py` + датасет
   `data/rag_eval_labor_code.jsonl` (~30 пар «вопрос → номер статьи ТК», из
   тестовых вопросов README и типовых кадровых кейсов): скрипт гоняет
   `retrieve()` против засеянной базы, считает hit@k / MRR по мете `article`,
