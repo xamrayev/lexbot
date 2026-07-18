@@ -159,6 +159,9 @@ async def test_rag_eval_smoke(client):
         ).scalar_one_or_none()
         if tenant is None:
             db.add(Tenant(id=LEGISLATION_TENANT_ID, name="Legislation (shared)", slug="legislation"))
+            # flush before adding chunks: DocumentChunk has no ORM relationship
+            # to Tenant, so SQLAlchemy won't order these inserts by the FK
+            await db.flush()
         for num, text in [
             ("130", "130-modda. Dastlabki sinov muddati uch oydan oshmasligi kerak."),
             ("182", "182-modda. Ish vaqtining normal davomiyligi haftasiga 40 soatdan ortiq bo'lishi mumkin emas."),
