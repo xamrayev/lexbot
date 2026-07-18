@@ -23,6 +23,8 @@ docker compose up -d
 ├── legalos/          # Платформа: FastAPI backend, Next.js frontend,
 │                     # Telegram-бот, Docker Compose, Nginx
 ├── docs/legalos/     # Архитектурная документация
+├── specs/            # Spec-Driven Development: спецификации новых продуктов
+│   └── content-factory/  # Content Factory SaaS (ContentOS) — см. specs/content-factory/README.md
 └── data/             # mehnat_kodeksi_processed.json — Трудовой кодекс РУз
                       # (датасет для наполнения базы знаний)
 ```
