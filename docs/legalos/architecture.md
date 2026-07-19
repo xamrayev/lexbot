@@ -97,7 +97,24 @@ RAG Security: SQL-фильтр `tenant_id IN (свой, LEGISLATION_TENANT)` —
 - **центр** — диалог с агентом;
 - **справа** — источники ответа: фрагменты документов и статьи законов с подсветкой, ссылки на Lex.uz/Norma.uz, история редакций.
 
-## 9. Roadmap
+## 9. Развёртывание в проде
+
+Что уже автоматизировано в репозитории:
+
+- **Бэкапы** — сервис `backup` в docker-compose: ночной `pg_dump` (custom format, gzip) в MinIO-бакет `legalos-backups`, ротация 14 дней (`BACKUP_INTERVAL_SECONDS`, `BACKUP_RETENTION_DAYS`).
+- **TLS** — `nginx/nginx-tls.conf.example`: HTTPS с редиректом с 80, HSTS, security-заголовки; смонтировать сертификаты и конфиг по комментариям в docker-compose.
+- **Rate limiting** — per-IP лимит на `/auth/*` (30 req/мин по умолчанию, `LEGALOS_AUTH_RATE_LIMIT_PER_MINUTE`), дневные квоты тарифов в Redis с фолбэком на PostgreSQL.
+- **Отзыв refresh-токенов** — ротация при каждом `/auth/refresh`, denylist в Redis, `POST /auth/logout`.
+
+Остаётся на стороне инфраструктуры при развёртывании:
+
+- сертификаты (Let's Encrypt/корпоративный CA) и DNS;
+- шифрование MinIO at-rest (SSE-S3 требует KMS: переменная `MINIO_KMS_SECRET_KEY`) и шифрование дисков;
+- вынос бэкапов за пределы хоста (репликация бакета `legalos-backups` в офсайт);
+- секреты через vault/secret-manager вместо `.env` (Government Edition);
+- сильный `LEGALOS_SECRET_KEY` (≥32 байт).
+
+## 10. Roadmap
 
 - [x] Alembic-миграции (`backend/migrations/`, baseline `0001`; dev по-прежнему может использовать `create_all`)
 - [x] Стриминговые ответы — SSE `POST /api/v1/chat/stream` через `AIProvider.stream()`

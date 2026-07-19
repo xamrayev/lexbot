@@ -13,7 +13,8 @@ from app.core.config import get_settings
 from app.db.base import get_db
 from app.models import Document, User
 from app.schemas import DocumentOut, GenerateDocumentRequest
-from app.services.billing.plans import PlanLimitExceeded, check_and_increment, get_tenant_plan
+from app.services.billing.limiter import check_and_increment_redis as check_and_increment
+from app.services.billing.plans import PlanLimitExceeded, get_tenant_plan
 from app.services.documents.generate import DOC_TYPES, generate_document
 from app.services.documents.ingest import classify_document, convert_to_text, index_document
 from app.services.documents.pdf import build_pdf

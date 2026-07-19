@@ -20,7 +20,8 @@ from app.schemas import ChatRequest, ChatResponse, ConversationOut
 from app.services.agents.definitions import AGENTS
 from app.services.agents.runner import BLOCKED_MESSAGE, run_agent_turn, stream_agent_turn
 from app.services.ai.base import ChatMessage
-from app.services.billing.plans import PlanLimitExceeded, check_and_increment, get_tenant_plan
+from app.services.billing.limiter import check_and_increment_redis as check_and_increment
+from app.services.billing.plans import PlanLimitExceeded, get_tenant_plan
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

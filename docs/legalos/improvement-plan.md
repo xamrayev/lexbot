@@ -14,7 +14,7 @@
 | 1 | CI и тестовый фундамент | ✅ (PR #6) |
 | 2 | Legislative Intelligence: парсинг Lex.uz и планировщик | ✅ (PR #7) |
 | 3 | Качество RAG: чанкинг, reranker, оценка | ✅ (PR #7) |
-| 4 | Безопасность: Redis-лимиты, токены, prompt-injection, шифрование/бэкапы | ⬜ |
+| 4 | Безопасность: Redis-лимиты, токены, prompt-injection, шифрование/бэкапы | ✅ (PR #7) |
 | 5 | Надёжность и наблюдаемость: worker, метрики, логи | ⬜ |
 | 6 | UX и мелочи: история чата, сессии бота, i18n, пагинация | ⬜ |
 
@@ -102,23 +102,23 @@ LLM-reranker дорог; качество поиска не измеряется
 нельзя отозвать; prompt-injection только на регекспах; шифрование и бэкапы
 заявлены в спеке, но не настроены.
 
-- [ ] **Rate limiting и счётчики в Redis** — `app/services/billing/limiter.py`:
+- [x] **Rate limiting и счётчики в Redis** — `app/services/billing/limiter.py`:
   дневные счётчики `INCR` + `EXPIRE` до конца суток (ключ
   `usage:{tenant}:{user}:{day}:{metric}`), sliding-window лимит запросов по
   IP на `/auth/*` (защита от брутфорса, 429). `check_and_increment`
   переключить на Redis с фолбэком на текущую PG-реализацию, если Redis
   недоступен. UsageCounter в PG оставить как асинхронную статистику (writeback
   из worker или на каждое N-е обращение).
-- [ ] **Ротация refresh-токенов и отзыв** — в `core/security.py` добавить `jti`
+- [x] **Ротация refresh-токенов и отзыв** — в `core/security.py` добавить `jti`
   в refresh; `/auth/refresh` помечает старый `jti` в Redis-denylist
   (`SETEX` на остаток TTL) и выдаёт новую пару; повторное использование
   отозванного refresh → 401 всем сессиям пользователя (детект кражи).
   Endpoint `POST /auth/logout` — отзыв текущего refresh.
-- [ ] **Prompt-injection: второй эшелон** — `services/security/guard.py`:
+- [x] **Prompt-injection: второй эшелон** — `services/security/guard.py`:
   опциональный LLM-judge (`LEGALOS_GUARD_LLM=true`) для входов, зацепивших
   «мягкие» паттерны; экранировать содержимое `<retrieved_documents>` от
   ложных закрывающих тегов; тесты на обход (unicode-гомоглифы, разрывы слов).
-- [ ] **Шифрование и бэкапы** — сервис `backup` в docker-compose (`pg_dump` по
+- [x] **Шифрование и бэкапы** — сервис `backup` в docker-compose (`pg_dump` по
   cron в MinIO-бакет `legalos-backups`, ротация 14 дней); включить SSE-S3 в
   MinIO; том Nginx для TLS-сертификатов + пример конфига с `ssl_certificate`;
   раздел «Развёртывание в проде» в `docs/legalos/architecture.md` (что уже

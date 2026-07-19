@@ -81,6 +81,11 @@ class Settings(BaseSettings):
     rag_reranker: str = "llm"
     cross_encoder_model: str = "BAAI/bge-reranker-v2-m3"
 
+    # Security hardening
+    auth_rate_limit_per_minute: int = 30  # per-IP on /auth/*; 0 disables
+    usage_pg_writeback_every: int = 10  # sync Redis usage counters to PG every Nth increment
+    guard_llm: bool = False  # LLM-judge second layer for suspicious inputs
+
     # Legislative monitoring: how often the worker enqueues checks of all
     # tracked acts (0 disables the scheduler; manual sync stays available)
     legislation_check_interval_hours: int = 24
