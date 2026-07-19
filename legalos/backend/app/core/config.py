@@ -76,8 +76,19 @@ class Settings(BaseSettings):
     neo4j_password: str = ""
     neo4j_database: str = "neo4j"
 
-    # RAG reranker: "llm" (listwise LLM) or "none" (fusion order)
+    # RAG reranker: "llm" (listwise LLM), "cross_encoder" (local
+    # sentence-transformers model), or "none" (fusion order)
     rag_reranker: str = "llm"
+    cross_encoder_model: str = "BAAI/bge-reranker-v2-m3"
+
+    # Security hardening
+    auth_rate_limit_per_minute: int = 30  # per-IP on /auth/*; 0 disables
+    usage_pg_writeback_every: int = 10  # sync Redis usage counters to PG every Nth increment
+    guard_llm: bool = False  # LLM-judge second layer for suspicious inputs
+
+    # Legislative monitoring: how often the worker enqueues checks of all
+    # tracked acts (0 disables the scheduler; manual sync stays available)
+    legislation_check_interval_hours: int = 24
 
     # External sources
     lex_uz_base_url: str = "https://lex.uz"

@@ -12,9 +12,9 @@
 | Часть | Тема | Статус |
 |---|---|---|
 | 1 | CI и тестовый фундамент | ✅ (PR #6) |
-| 2 | Legislative Intelligence: парсинг Lex.uz и планировщик | ⬜ |
-| 3 | Качество RAG: чанкинг, reranker, оценка | ⬜ |
-| 4 | Безопасность: Redis-лимиты, токены, prompt-injection, шифрование/бэкапы | ⬜ |
+| 2 | Legislative Intelligence: парсинг Lex.uz и планировщик | ✅ (PR #7) |
+| 3 | Качество RAG: чанкинг, reranker, оценка | ✅ (PR #7) |
+| 4 | Безопасность: Redis-лимиты, токены, prompt-injection, шифрование/бэкапы | ✅ (PR #7) |
 | 5 | Надёжность и наблюдаемость: worker, метрики, логи | ⬜ |
 | 6 | UX и мелочи: история чата, сессии бота, i18n, пагинация | ⬜ |
 
@@ -47,7 +47,7 @@
 редакция», в индекс попадает разметка), а мониторинг никто не запускает по
 расписанию.
 
-- [ ] **Парсинг Lex.uz** — новый модуль `app/services/legislative/parser.py`:
+- [x] **Парсинг Lex.uz** — новый модуль `app/services/legislative/parser.py`:
   `extract_act_text(html) -> str` — вытащить чистый текст акта (BeautifulSoup;
   выкинуть script/style/nav, схлопнуть пробелы); `split_by_articles(text)` —
   разбор по статьям регекспом на `N-modda`/`Статья N` с фолбэком на
@@ -55,7 +55,7 @@
   (`monitor.check_act_for_changes`); чанки актов делать по-статейно с метой
   `article`. Зависимость: `beautifulsoup4` в requirements. Чистые функции —
   покрыть тестами на образце HTML (фикстура в `tests/fixtures/`).
-- [ ] **Планировщик мониторинга** — периодическая задача в worker
+- [x] **Планировщик мониторинга** — периодическая задача в worker
   (`app/workers/consumer.py`): asyncio-цикл `scheduler_loop()`, который раз в
   `LEGALOS_LEGISLATION_CHECK_INTERVAL_HOURS` (дефолт 24) выбирает все акты и
   публикует по сообщению в очередь `legalos.legislation`. Джиттер и лог
@@ -72,20 +72,20 @@
 **Зачем:** символьная резка ломает предложения и игнорирует структуру;
 LLM-reranker дорог; качество поиска не измеряется.
 
-- [ ] **Структурный чанкинг** — в `app/services/documents/ingest.py`:
+- [x] **Структурный чанкинг** — в `app/services/documents/ingest.py`:
   `split_into_chunks` резать по границам абзацев (`\n\n`), затем предложений,
   с добивкой до `CHUNK_SIZE` и перекрытием на уровне последних предложений;
   Markdown-заголовки от Docling начинают новый чанк и попадают в мету
   (`section`). Инварианты старых тестов сохранить (покрытие всего текста,
   максимум длины).
-- [ ] **Cross-encoder reranker** — `app/services/rag/rerankers.py`: третий режим
+- [x] **Cross-encoder reranker** — `app/services/rag/rerankers.py`: третий режим
   `LEGALOS_RAG_RERANKER=cross_encoder` — ленивый `sentence-transformers`
   CrossEncoder (`BAAI/bge-reranker-v2-m3` или конфигурируемый
   `LEGALOS_CROSS_ENCODER_MODEL`), опциональная зависимость (закомментирована в
   requirements как docling/neo4j); при недоступности — фолбэк на порядок
   fusion с warning-логом. Вынести текущий LLM-reranker туда же, `pipeline.py`
   выбирает стратегию по настройке.
-- [ ] **Оценка качества** — `app/scripts/rag_eval.py` + датасет
+- [x] **Оценка качества** — `app/scripts/rag_eval.py` + датасет
   `data/rag_eval_labor_code.jsonl` (~30 пар «вопрос → номер статьи ТК», из
   тестовых вопросов README и типовых кадровых кейсов): скрипт гоняет
   `retrieve()` против засеянной базы, считает hit@k / MRR по мете `article`,
@@ -102,23 +102,23 @@ LLM-reranker дорог; качество поиска не измеряется
 нельзя отозвать; prompt-injection только на регекспах; шифрование и бэкапы
 заявлены в спеке, но не настроены.
 
-- [ ] **Rate limiting и счётчики в Redis** — `app/services/billing/limiter.py`:
+- [x] **Rate limiting и счётчики в Redis** — `app/services/billing/limiter.py`:
   дневные счётчики `INCR` + `EXPIRE` до конца суток (ключ
   `usage:{tenant}:{user}:{day}:{metric}`), sliding-window лимит запросов по
   IP на `/auth/*` (защита от брутфорса, 429). `check_and_increment`
   переключить на Redis с фолбэком на текущую PG-реализацию, если Redis
   недоступен. UsageCounter в PG оставить как асинхронную статистику (writeback
   из worker или на каждое N-е обращение).
-- [ ] **Ротация refresh-токенов и отзыв** — в `core/security.py` добавить `jti`
+- [x] **Ротация refresh-токенов и отзыв** — в `core/security.py` добавить `jti`
   в refresh; `/auth/refresh` помечает старый `jti` в Redis-denylist
   (`SETEX` на остаток TTL) и выдаёт новую пару; повторное использование
   отозванного refresh → 401 всем сессиям пользователя (детект кражи).
   Endpoint `POST /auth/logout` — отзыв текущего refresh.
-- [ ] **Prompt-injection: второй эшелон** — `services/security/guard.py`:
+- [x] **Prompt-injection: второй эшелон** — `services/security/guard.py`:
   опциональный LLM-judge (`LEGALOS_GUARD_LLM=true`) для входов, зацепивших
   «мягкие» паттерны; экранировать содержимое `<retrieved_documents>` от
   ложных закрывающих тегов; тесты на обход (unicode-гомоглифы, разрывы слов).
-- [ ] **Шифрование и бэкапы** — сервис `backup` в docker-compose (`pg_dump` по
+- [x] **Шифрование и бэкапы** — сервис `backup` в docker-compose (`pg_dump` по
   cron в MinIO-бакет `legalos-backups`, ротация 14 дней); включить SSE-S3 в
   MinIO; том Nginx для TLS-сертификатов + пример конфига с `ssl_certificate`;
   раздел «Развёртывание в проде» в `docs/legalos/architecture.md` (что уже

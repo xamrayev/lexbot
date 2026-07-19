@@ -42,6 +42,21 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.middleware("http")
+    async def auth_rate_limit(request, call_next):
+        # Per-IP brute-force protection on authentication endpoints.
+        if request.method == "POST" and "/auth/" in request.url.path:
+            from fastapi.responses import JSONResponse
+
+            from app.services.billing.limiter import hit_ip_limit
+
+            ip = request.client.host if request.client else ""
+            if await hit_ip_limit(ip):
+                return JSONResponse(
+                    {"detail": "Too many authentication attempts, try again later"}, status_code=429
+                )
+        return await call_next(request)
+
     prefix = settings.api_v1_prefix
     app.include_router(auth.router, prefix=prefix)
     app.include_router(sso.router, prefix=prefix)

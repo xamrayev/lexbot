@@ -13,7 +13,8 @@ from app.api.deps import get_current_user, write_audit
 from app.core.security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 from app.db.base import get_db
 from app.models import PlanTier, Subscription, Tenant, User, UserRole
-from app.schemas import RegisterRequest, TokenResponse, UserOut
+from app.schemas import RefreshRequest, RegisterRequest, TokenResponse, UserOut
+from app.services.security import tokens
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -76,22 +77,47 @@ async def login(
     )
 
 
-@router.post("/refresh", response_model=TokenResponse)
-async def refresh(refresh_token: str, db: AsyncSession = Depends(get_db)):
+def _validate_refresh(token: str) -> dict:
     try:
-        payload = decode_token(refresh_token)
+        payload = decode_token(token)
     except pyjwt.PyJWTError:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
     if payload.get("type") != "refresh":
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+    return payload
+
+
+def _remaining_ttl(payload: dict) -> int:
+    from datetime import datetime, timezone
+
+    return max(0, int(payload.get("exp", 0) - datetime.now(timezone.utc).timestamp()))
+
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    """Rotate the refresh token: the old one is revoked, a new pair is issued.
+
+    Reuse of an already-rotated token is the signature of token theft and
+    yields 401."""
+    payload = _validate_refresh(body.refresh_token)
+    if await tokens.is_revoked(payload.get("jti", "")):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token has been revoked")
     row = await db.execute(select(User).where(User.id == uuid.UUID(payload["sub"]), User.is_active.is_(True)))
     user = row.scalar_one_or_none()
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+    await tokens.revoke(payload.get("jti", ""), _remaining_ttl(payload))
     return TokenResponse(
         access_token=create_access_token(str(user.id), str(user.tenant_id)),
         refresh_token=create_refresh_token(str(user.id), str(user.tenant_id)),
     )
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(body: RefreshRequest):
+    """Revoke the presented refresh token (access tokens expire on their own)."""
+    payload = _validate_refresh(body.refresh_token)
+    await tokens.revoke(payload.get("jti", ""), _remaining_ttl(payload))
 
 
 @router.get("/me", response_model=UserOut)

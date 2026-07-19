@@ -10,7 +10,7 @@ from app.services.agents.definitions import get_agent
 from app.services.ai.base import ChatMessage
 from app.services.ai.registry import get_provider
 from app.services.rag.pipeline import retrieve
-from app.services.security.guard import screen_user_input, wrap_retrieved_context
+from app.services.security.guard import screen_user_input_deep, wrap_retrieved_context
 
 MAX_HISTORY_MESSAGES = 20
 
@@ -40,7 +40,7 @@ async def prepare_turn(
     history: list[ChatMessage] | None = None,
 ) -> PreparedTurn:
     """Shared first half of a turn: guardrails, retrieval, prompt assembly."""
-    verdict = screen_user_input(user_message)
+    verdict = await screen_user_input_deep(user_message)
     if not verdict.allowed:
         return PreparedTurn(messages=[], blocked=True)
 
