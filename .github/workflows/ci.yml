@@ -36,7 +36,7 @@ jobs:
           cache: pip
           cache-dependency-path: legalos/backend/requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest pytest-asyncio
+        run: pip install -r requirements.txt pytest pytest-asyncio fakeredis
       - name: Run tests (unit + DB integration)
         run: pytest tests/ -v
 

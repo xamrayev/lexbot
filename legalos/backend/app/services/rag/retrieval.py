@@ -6,6 +6,7 @@ tenant (corporate documents) or is public legislation (act_id set, tenant_id of
 the shared legislation tenant). This is the RAG-security boundary.
 """
 
+import re
 import uuid
 from dataclasses import dataclass
 
@@ -25,20 +26,35 @@ class RetrievedChunk:
     origin: str  # "bm25" | "vector" | "fused"
 
 
+def to_or_tsquery(query: str, max_terms: int = 32) -> str:
+    """Natural-language question → OR tsquery string ("sinov | muddati | ...").
+
+    plainto_tsquery joins words with AND, so a question containing any word
+    absent from the document ("qancha?", "сколько?") matches nothing.
+    OR semantics lets ts_rank_cd rank by how many terms match instead.
+    Tokens come from \\w+ so the result is safe tsquery syntax.
+    """
+    words = re.findall(r"\w+", query.lower())
+    return " | ".join(dict.fromkeys(words[:max_terms]))  # de-dup, keep order
+
+
 async def bm25_search(db: AsyncSession, tenant_id: uuid.UUID, query: str, limit: int = 20) -> list[RetrievedChunk]:
+    tsquery = to_or_tsquery(query)
+    if not tsquery:
+        return []
     stmt = sql_text(
         """
         SELECT id, text, meta,
-               ts_rank_cd(to_tsvector('simple', text), plainto_tsquery('simple', :q)) AS score
+               ts_rank_cd(to_tsvector('simple', text), to_tsquery('simple', :q)) AS score
         FROM document_chunks
         WHERE tenant_id IN (:tenant_id, :legal_tenant)
-          AND to_tsvector('simple', text) @@ plainto_tsquery('simple', :q)
+          AND to_tsvector('simple', text) @@ to_tsquery('simple', :q)
         ORDER BY score DESC
         LIMIT :limit
         """
     )
     rows = await db.execute(
-        stmt, {"q": query, "tenant_id": tenant_id, "legal_tenant": LEGISLATION_TENANT_ID, "limit": limit}
+        stmt, {"q": tsquery, "tenant_id": tenant_id, "legal_tenant": LEGISLATION_TENANT_ID, "limit": limit}
     )
     return [
         RetrievedChunk(chunk_id=str(r.id), text=r.text, score=float(r.score), meta=r.meta or {}, origin="bm25")

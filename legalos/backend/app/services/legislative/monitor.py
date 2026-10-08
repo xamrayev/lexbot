@@ -16,16 +16,18 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ComplianceWatch, DocumentChunk, LegislativeAct, LegislativeRevision, Notification
-from app.services.documents.ingest import split_into_chunks
 from app.services.ai.registry import get_embedding_provider
+from app.services.legislative.parser import extract_act_text, split_by_articles
 from app.services.rag.retrieval import LEGISLATION_TENANT_ID
 
 
 async def fetch_act_text(url: str) -> str:
+    """Fetch an act page and return its normalized plain text (markup
+    stripped) — the content hash must react to text changes only."""
     async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
         resp = await client.get(url)
         resp.raise_for_status()
-        return resp.text
+        return extract_act_text(resp.text)
 
 
 def content_hash(text: str) -> str:
@@ -33,23 +35,35 @@ def content_hash(text: str) -> str:
 
 
 async def reindex_act(db: AsyncSession, act: LegislativeAct, text: str) -> None:
-    """Replace the act's chunks in the shared legislation tenant."""
+    """Replace the act's chunks in the shared legislation tenant.
+
+    Chunking is article-level (``115-modda`` / ``Статья 115``) so citations
+    point at exact articles; window chunking is the fallback for acts
+    without article structure."""
     await db.execute(delete(DocumentChunk).where(DocumentChunk.act_id == act.id))
-    chunk_texts = split_into_chunks(text)
+    chunks = split_by_articles(text)
     try:
-        embeddings: list[list[float] | None] = list(await get_embedding_provider().embed(chunk_texts))
+        embeddings: list[list[float] | None] = list(
+            await get_embedding_provider().embed([c["text"] for c in chunks])
+        )
     except Exception:
-        embeddings = [None] * len(chunk_texts)
-    for seq, (chunk_text, embedding) in enumerate(zip(chunk_texts, embeddings)):
+        embeddings = [None] * len(chunks)
+    for seq, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
         db.add(
             DocumentChunk(
                 id=uuid.uuid4(),
                 tenant_id=LEGISLATION_TENANT_ID,
                 act_id=act.id,
                 seq=seq,
-                text=chunk_text,
+                text=chunk["text"],
                 embedding=embedding,
-                meta={"title": act.title, "url": act.url, "act_id": str(act.id), "source": act.source},
+                meta={
+                    "title": act.title,
+                    "url": act.url,
+                    "act_id": str(act.id),
+                    "source": act.source,
+                    "article": chunk["article"],
+                },
             )
         )
 

@@ -11,6 +11,7 @@ redis>=5.0
 minio>=7.2
 aio-pika>=9.4
 httpx>=0.27
+beautifulsoup4>=4.12
 PyJWT>=2.8
 passlib[bcrypt]>=1.7
 bcrypt<4.1
@@ -20,5 +21,7 @@ fpdf2>=2.7
 
 # Document Intelligence (heavy; optional in dev — pipeline falls back to text decode)
 # docling>=2.0
+# Cross-encoder reranker (optional, heavy)
+# sentence-transformers>=3.0
 # Knowledge Graph expansion (optional; RAG works without it)
 # neo4j>=5.20

@@ -145,6 +145,48 @@ async def test_tenant_isolation_documents(client):
     assert get_b.status_code == 404
 
 
+async def test_rag_eval_smoke(client):
+    """Seed a few legislation chunks and verify the eval metrics pipeline."""
+    from app.db.base import async_session_factory
+    from app.models import DocumentChunk, Tenant
+    from app.scripts.rag_eval import evaluate
+    from app.services.rag.retrieval import LEGISLATION_TENANT_ID
+    from sqlalchemy import select
+
+    async with async_session_factory() as db:
+        tenant = (
+            await db.execute(select(Tenant).where(Tenant.id == LEGISLATION_TENANT_ID))
+        ).scalar_one_or_none()
+        if tenant is None:
+            db.add(Tenant(id=LEGISLATION_TENANT_ID, name="Legislation (shared)", slug="legislation"))
+            # flush before adding chunks: DocumentChunk has no ORM relationship
+            # to Tenant, so SQLAlchemy won't order these inserts by the FK
+            await db.flush()
+        for num, text in [
+            ("130", "130-modda. Dastlabki sinov muddati uch oydan oshmasligi kerak."),
+            ("182", "182-modda. Ish vaqtining normal davomiyligi haftasiga 40 soatdan ortiq bo'lishi mumkin emas."),
+        ]:
+            db.add(
+                DocumentChunk(
+                    id=uuid.uuid4(),
+                    tenant_id=LEGISLATION_TENANT_ID,
+                    seq=0,
+                    text=text,
+                    meta={"article": num, "title": "Mehnat kodeksi"},
+                )
+            )
+        await db.commit()
+
+        samples = [
+            {"question": "Dastlabki sinov muddati qancha?", "article": "130"},
+            {"question": "Ish vaqtining normal davomiyligi qancha soat?", "article": "182"},
+        ]
+        report = await evaluate(db, samples, top_k=5)
+    assert report.total == 2
+    assert report.hit_at_k == 1.0
+    assert report.mrr > 0.5
+
+
 async def test_agents_gated_by_free_plan(client):
     _, token = await _register(client)
     resp = await client.get("/api/v1/agents", headers=_auth(token))

@@ -1,5 +1,6 @@
 """JWT + password hashing utilities (OAuth2 password flow compatible)."""
 
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -24,6 +25,7 @@ def _create_token(subject: str, tenant_id: str | None, token_type: str, expires_
     payload: dict[str, Any] = {
         "sub": subject,
         "type": token_type,
+        "jti": uuid.uuid4().hex,  # unique id → refresh tokens are revocable
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + expires_delta,
     }

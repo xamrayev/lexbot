@@ -42,3 +42,14 @@ def test_rrf_prefers_chunks_present_in_both_lists():
         [[bm25_only, shared], [vector_only, shared]]
     )
     assert fused[0].chunk_id == "c1"
+
+
+def test_to_or_tsquery_builds_safe_or_query():
+    from app.services.rag.retrieval import to_or_tsquery
+
+    q = to_or_tsquery("Dastlabki sinov muddati qancha?")
+    assert q == "dastlabki | sinov | muddati | qancha"
+    # punctuation/operators can't inject tsquery syntax
+    assert to_or_tsquery("a & b | c ! ( )") == "a | b | c"
+    assert to_or_tsquery("Сколько дней отпуска? отпуска!") == "сколько | дней | отпуска"
+    assert to_or_tsquery("...") == ""
